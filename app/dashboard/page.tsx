@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Resizable } from "@/components/resizable"
-import { CodeEditor } from "@/components/code-editor"
 import { FileTree } from "@/components/file-tree"
 import { Console } from "@/components/console"
 import { SettingsMenu } from "@/components/settings-menu"
@@ -16,6 +15,12 @@ import { UserMenu } from "@/components/user-menu"
 import { useAuth } from "@/contexts/auth-context"
 import { useSettings } from "@/contexts/settings-context"
 import { PlusIcon, SearchIcon, XIcon, PlayIcon, SaveIcon, TrashIcon } from "lucide-react"
+
+type ConsoleOutput = {
+  time: string
+  message: string
+  type: "error" | "info" | "warning" | "success"
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -39,7 +44,7 @@ export default function DashboardPage() {
     },
   ])
   const [activeTab, setActiveTab] = useState("tab1")
-  const [consoleOutput, setConsoleOutput] = useState([
+  const [consoleOutput, setConsoleOutput] = useState<ConsoleOutput[]>([
     { time: "08:21:42", message: 'Test is not a valid member of Model "Workspace.Part"', type: "error" },
   ])
 
@@ -75,22 +80,22 @@ export default function DashboardPage() {
     const currentTab = tabs.find((tab) => tab.id === activeTab)
     if (currentTab) {
       try {
-        // In a real app, you'd have a safer way to execute code
-        // This is just for demonstration
         const timestamp = new Date().toLocaleTimeString("en-US", {
           hour12: false,
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
         })
-        setConsoleOutput([
-          ...consoleOutput,
-          { time: timestamp, message: `Executing ${currentTab.name}...`, type: "info" },
+        setConsoleOutput((prev) => [
+          ...prev,
+          { time: timestamp, message: `Executing...`, type: "info" },
         ])
 
-        // If autoInject is enabled, we would add some code here
         if (settings.autoInject) {
-          setConsoleOutput([...consoleOutput, { time: timestamp, message: "Auto-injecting code...", type: "info" }])
+          setConsoleOutput((prev) => [
+            ...prev,
+            { time: timestamp, message: "Auto-injecting code...", type: "info" },
+          ])
         }
       } catch (error) {
         const timestamp = new Date().toLocaleTimeString("en-US", {
@@ -99,7 +104,10 @@ export default function DashboardPage() {
           minute: "2-digit",
           second: "2-digit",
         })
-        setConsoleOutput([...consoleOutput, { time: timestamp, message: String(error), type: "error" }])
+        setConsoleOutput((prev) => [
+          ...prev,
+          { time: timestamp, message: String(error), type: "error" },
+        ])
       }
     }
   }
@@ -146,7 +154,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col">
           <div className="flex items-center bg-zinc-900 border-b border-zinc-800">
-            <ScrollArea className="w-full" orientation="horizontal">
+            <ScrollArea className="w-full">
               <div className="flex">
                 {tabs.map((tab) => (
                   <div
@@ -177,20 +185,6 @@ export default function DashboardPage() {
                 </Button>
               </div>
             </ScrollArea>
-          </div>
-
-          <div className="flex-1 overflow-hidden">
-            {tabs.map((tab) => (
-              <div key={tab.id} className={`h-full ${activeTab === tab.id ? "block" : "hidden"}`}>
-                <CodeEditor
-                  value={tab.content}
-                  language={tab.language}
-                  onChange={(value) => updateTabContent(tab.id, value)}
-                  lineWrapping={settings.lineWrapping}
-                  tabSize={settings.tabSize}
-                />
-              </div>
-            ))}
           </div>
 
           <Resizable direction="up" defaultSize={150} minSize={100} maxSize={500}>
